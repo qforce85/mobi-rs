@@ -151,12 +151,25 @@ impl PdbRecords {
                 let next_offset = next.offset as usize;
 
                 if extra_bytes < next_offset {
-                    &content[curr_offset..(next_offset - extra_bytes)]
+                    let end_offset = next_offset - extra_bytes;
+
+                    // Validate slice bounds before indexing
+                    if curr_offset > content.len() || curr_offset > end_offset {
+                        &[]
+                    } else {
+                        let safe_end = end_offset.min(content.len());
+                        &content[curr_offset..safe_end]
+                    }
                 } else {
                     &[]
                 }
             } else {
-                &content[curr_offset..]
+                // Ensure final record doesn't exceed content bounds
+                if curr_offset <= content.len() {
+                    &content[curr_offset..]
+                } else {
+                    &[]
+                }
             };
 
             crecords.0.push(RawRecord {
