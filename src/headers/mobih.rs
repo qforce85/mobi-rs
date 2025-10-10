@@ -315,8 +315,15 @@ impl MobiHeader {
             data_section_count: reader.read_u32_be()?,
             unused_8: reader.read_u32_be()?,
             extra_record_data_flags: reader.read_u32_be()?,
-            // Check that this is not 0xFF_FF_FF_FF
-            first_index_record: reader.read_u32_be()?,
+            // Note: first_index_record was added in later MOBI versions and may
+            // not exist in older files with header_length < 232. If we have at
+            // least 224 bytes of header fields (224 = 232 - 8, for identifier
+			// and length), we can read it. Otherwise, use default value.
+            first_index_record: if remaining_header_bytes >= 224 {
+                reader.read_u32_be()?
+            } else {
+                0xFFFF_FFFF  // Default value indicating no index record
+            },
             // Read remainder of header
             unused_9: {
                 let mut buf = Vec::new();
